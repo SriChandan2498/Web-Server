@@ -1,4 +1,3 @@
-# Note: Server should start interaction with client
 # != 127.0.0.1/index.html send 400 bad request
 #  search for finding a file in directory
         
@@ -12,7 +11,7 @@ def sendDefaultFile(connection):
         connection.send(l)
         l = f.read(1024)
     f.close()
-    
+
 # 200 OK
 def sendOK(connection):
     connection.send("HTTP/1.1 200 OK\nContent-Type: text/html; charset=UTF-8;\n\n".encode())
