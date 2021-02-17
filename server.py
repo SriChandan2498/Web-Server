@@ -1,5 +1,34 @@
 # Note: Server should start interaction with client
+# != 127.0.0.1/index.html send 400 bad request
+#  search for finding a file in directory
+        
 import time, socket
+
+# 200 OK
+def sendOK(connection):
+    connection.send("HTTP/1.1 200 OK\nContent-Type: text/html; charset=UTF-8;\n\n".encode())
+
+# 404 file not found
+def sendFOF(connection):
+    connection.send("HTTP/1.1 404 Not Found\nContent-Type: text/html; charset=UTF-8;\n\n".encode())
+
+# 400 Bad Request
+def sendBadRequest(connection):
+    connection.send("HTTP/1.1 400 Bad Request\nContent-Type: text/html; charset=UTF-8;\n\n".encode())
+
+# 403 Access Denied
+def SendForbidden(connection):
+    connection.send("HTTP/1.1 403 Forbidden\nContent-Type: text/html; charset=UTF-8;\n\n".encode())
+
+# sending index.html file
+def sendDefaultFile(connection):
+    f = open('index.html','rb')
+    # connection.send("HTTP/1.1 200 OK\nContent-Type: text/html; charset=UTF-8;\n\n".encode())
+    l = f.read(1024)
+    while (l):
+        connection.send(l)
+        l = f.read(1024)
+    f.close()
 
 def startServer():
     print('Setup Server...')
@@ -41,27 +70,24 @@ def startServer():
         urlList = url.split(".")
 
         if(url == "hello.py"):
-            connection.send("HTTP/1.1 403 Forbidden\nContent-Type: text/html; charset=UTF-8;\n\n".encode())
-            # connection.close()
+            # connection.send("HTTP/1.1 403 Forbidden\nContent-Type: text/html; charset=UTF-8;\n\n".encode())
+            SendForbidden(connection)
+
+        elif(url == ""):
+            sendDefaultFile(connection)
+
         elif(urlList[1] == "html"):
             if(urlList[0] == "index"):
-                # connection.send("HTTP/1.1 200 OK\nContent-Type: text/html; charset=UTF-8;\n\nWelcome folks!".encode())
-                filename='index.html'
-                f = open(filename,'rb')
-                connection.send("HTTP/1.1 200 OK\nContent-Type: text/html; charset=UTF-8;\n\n".encode())
-                l = f.read(1024)
-                while (l):
-                    connection.send(l)
-                    l = f.read(1024)
-                f.close()
-                # connection.close()
+                # connection.send("HTTP/1.1 200 OK\nContent-Type: text/html; charset=UTF-8;\n\n".encode())
+                sendOK(connection)
+                sendDefaultFile(connection)
             else:
-                connection.send("HTTP/1.1 404 Not Found\nContent-Type: text/html; charset=UTF-8;\n\n".encode())
+                # connection.send("HTTP/1.1 404 Not Found\nContent-Type: text/html; charset=UTF-8;\n\n".encode())
+                sendFOF(connection)
                 # connection.close()
         else:
-            connection.send("HTTP/1.1 400 Bad Request\nContent-Type: text/html; charset=UTF-8;\n\n".encode())
+            # connection.send("HTTP/1.1 400 Bad Request\nContent-Type: text/html; charset=UTF-8;\n\n".encode())
+            sendBadRequest(connection)        
         connection.close()
-        # != 127.0.0.1/index.html send 400 bad request
-        #  search for finding a file in directory
-        
+
 startServer()
