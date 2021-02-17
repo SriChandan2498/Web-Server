@@ -4,6 +4,15 @@
         
 import time, socket
 
+# sending index.html file
+def sendDefaultFile(connection):
+    f = open('index.html','rb')
+    l = f.read(1024)
+    while (l):
+        connection.send(l)
+        l = f.read(1024)
+    f.close()
+    
 # 200 OK
 def sendOK(connection):
     connection.send("HTTP/1.1 200 OK\nContent-Type: text/html; charset=UTF-8;\n\n".encode())
@@ -20,15 +29,14 @@ def sendBadRequest(connection):
 def SendForbidden(connection):
     connection.send("HTTP/1.1 403 Forbidden\nContent-Type: text/html; charset=UTF-8;\n\n".encode())
 
-# sending index.html file
-def sendDefaultFile(connection):
-    f = open('index.html','rb')
-    # connection.send("HTTP/1.1 200 OK\nContent-Type: text/html; charset=UTF-8;\n\n".encode())
-    l = f.read(1024)
-    while (l):
-        connection.send(l)
-        l = f.read(1024)
-    f.close()
+# get method and url
+def getMethodandUrl(cmessage):
+    line1 = cmessage.split('\n')[0]
+    # print(line1)
+    try:
+        return (line1.split(" ")[0] , line1.split(" ")[1][1:])
+    except IndexError as i:
+        pass
 
 def startServer():
     print('Setup Server...')
@@ -49,44 +57,38 @@ def startServer():
     print('Waiting for incoming connections...')
 
     while True:
-        # Write you code here to send response to client and recerive response from client
+        # accepting connections from clients
         connection, addr = soc.accept()
-        # print()
         print("Received connection from ", addr[0], "(", addr[1], ")\n")
         print('Connection Established. Connected From: {}, ({})'.format(addr[0], addr[0]))
         cMessage = connection.recv(1024)
         cMessage = cMessage.decode()
         # print(cMessage)
-        line1 = cMessage.split('\n')[0]
-        # print(line1)
-        try:
-            method, url = line1.split(" ")[0] , line1.split(" ")[1]
-            print(method)
-            url = url[1:]
-            print(url)
-        except IndexError as i:
-            pass
+        method, url = getMethodandUrl(cMessage)
+        print(method)
+        print(url)
+
         # checking for extention
         urlList = url.split(".")
 
+        # response for forbidden file = "hello.py"
         if(url == "hello.py"):
-            # connection.send("HTTP/1.1 403 Forbidden\nContent-Type: text/html; charset=UTF-8;\n\n".encode())
             SendForbidden(connection)
 
+        # response for default page
         elif(url == ""):
             sendDefaultFile(connection)
 
+        # response for index.html page
         elif(urlList[1] == "html"):
             if(urlList[0] == "index"):
-                # connection.send("HTTP/1.1 200 OK\nContent-Type: text/html; charset=UTF-8;\n\n".encode())
                 sendOK(connection)
                 sendDefaultFile(connection)
             else:
-                # connection.send("HTTP/1.1 404 Not Found\nContent-Type: text/html; charset=UTF-8;\n\n".encode())
+                # response for other html pages
                 sendFOF(connection)
-                # connection.close()
         else:
-            # connection.send("HTTP/1.1 400 Bad Request\nContent-Type: text/html; charset=UTF-8;\n\n".encode())
+            # response for bad request  
             sendBadRequest(connection)        
         connection.close()
 
