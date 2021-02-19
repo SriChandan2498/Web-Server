@@ -1,7 +1,8 @@
 # Author: Sri Sai Chandan J,2020501017
 # References : Various onine resources and guidance from mentor
 
-import time,socket,os       
+from _thread import *
+import time,socket,os,threading        
 
 # 200 OK
 def sendOK(connection):
@@ -124,6 +125,10 @@ def startServer(soc):
     print('Waiting for incoming connections...')
     respondToClients(soc)
 
+def addMutipleThreads(url,method,connection):
+    urlResponse(url,method,connection)
+    connection.close()
+
 def respondToClients(soc):
     while True:
         # accepting connections from clients
@@ -136,10 +141,9 @@ def respondToClients(soc):
         method, url = getMethodandUrl(cMessage)
         print(method)
         print(url)
-        urlResponse(url,method,connection)
-        connection.close()
-
-    
+        start_new_thread(addMutipleThreads,(url,method,connection))
+    soc.close()
+  
 root = "C:\\Users\\Chandan Zna\\Documents\\MSIT 2020\\MSIT 1st year\\FCN\\Web Server"
 soc = createSocket("",80)
 startServer(soc)
