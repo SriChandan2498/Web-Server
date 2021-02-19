@@ -1,16 +1,7 @@
-# != 127.0.0.1/index.html send 400 bad request
-#  search for finding a file in directory
-        
-import time, socket
+# Author: Sri Sai Chandan J,2020501017
+# References : Various onine resources and guidance from mentor
 
-# sending index.html file
-def sendDefaultFile(connection):
-    f = open('index.html','rb')
-    l = f.read(1024)
-    while (l):
-        connection.send(l)
-        l = f.read(1024)
-    f.close()
+import time,socket,os       
 
 # 200 OK
 def sendOK(connection):
@@ -25,8 +16,17 @@ def sendBadRequest(connection):
     connection.send("HTTP/1.1 400 Bad Request\nContent-Type: text/html; charset=UTF-8;\n\n".encode())
 
 # 403 Access Denied
-def SendForbidden(connection):
+def sendForbidden(connection):
     connection.send("HTTP/1.1 403 Forbidden\nContent-Type: text/html; charset=UTF-8;\n\n".encode())
+
+# 415 Unsupported Media Type
+def sendUnsupportedMediaType(connection):
+    connection.send("HTTP/1.1 415 Unsupported Media Type\nContent-Type: text/html; charset=UTF-8;\n\n".encode())
+
+# 501 Not Implemented
+def sendUnimplementedMethod(connection):
+    connection.send("HTTP/1.1 501 Not Implemented\nContent-Type: text/html; charset=UTF-8;\n\n".encode())
+
 
 # get method and url
 def getMethodandUrl(cmessage):
@@ -35,9 +35,77 @@ def getMethodandUrl(cmessage):
     try:
         return (line1.split(" ")[0] , line1.split(" ")[1][1:])
     except IndexError as i:
-        pass
+        return (line1,"")
 
-def startServer():
+# sending file
+def sendFile(filename,connection):
+    f = open(filename,'rb')
+    l = f.read()
+    connection.send(l)
+    f.close()
+
+# sending response for request
+def urlResponse(url,method,connection):
+    badRequest = False
+
+    # response for forbidden file = "admin.csv"
+    if(url == "admin.csv"):
+            sendForbidden(connection)
+            return
+
+    # response for unimplemented methods
+    if( method != "GET" and method != "HEAD"):
+        badRequest = True
+        sendUnimplementedMethod(connection)
+        return
+    
+    if(not badRequest):
+        # response for unsupported media
+        if(url == "favicon.ico"):
+            sendUnsupportedMediaType(connection)
+            return
+        else:
+            if(url == "" or url == "index.html"):
+                url ="."
+            if(os.path.isdir(url)):
+                sendOK(connection)
+                loadDirectory(url,connection)
+                return
+            
+            elif(os.path.isfile(url)):
+                sendFile(root+"\\"+url,connection)
+                return
+            else:
+                sendFOF(connection)
+                return 
+    else:
+        sendBadRequest(connection)
+        return
+
+def loadDirectory(url,connection):
+    parent = url.split("/")[-2:-1]
+    if(len(parent)>0):
+        parent=parent[0]
+    else:
+        parent = "../"
+    html = f'''
+            <html>
+            <head>
+            <title>Index of </title>
+            </head>
+            <body>
+            <h1>Index of /{url}</h1>
+            <table>
+            <th>Files and Directories</th>
+            <tr><td><a href='./{parent}'>..</a></td></tr>
+            '''      
+            
+    for filename in os.listdir(url):
+        html += "<tr><td><a href='/"+url+"/"+filename+"'>"+filename+"</a></td></tr>"
+    html += '</table></body></html>'
+    connection.send(html.encode())
+
+def createSocket(IP,port):
     print('Setup Server...')
     time.sleep(1)
     # Socket Creation
@@ -46,15 +114,17 @@ def startServer():
     host_name = socket.gethostname()
     # Get Host IP Address
     ip = socket.gethostbyname(host_name)
-    # Port NO 80 for http requests
-    port = 80
-    # Binding IP Address and Port together
-    soc.bind(("", port))
     print(host_name, '({})'.format(ip))
-    # Listening for CLient to connect
+    # Binding IP Address and Port together
+    soc.bind((IP,port))
+    return soc
+
+def startServer(soc):
     soc.listen(1) 
     print('Waiting for incoming connections...')
+    respondToClients(soc)
 
+def respondToClients(soc):
     while True:
         # accepting connections from clients
         connection, addr = soc.accept()
@@ -66,29 +136,10 @@ def startServer():
         method, url = getMethodandUrl(cMessage)
         print(method)
         print(url)
-
-        # checking for extention
-        urlList = url.split(".")
-
-        # response for forbidden file = "hello.py"
-        if(url == "hello.py"):
-            SendForbidden(connection)
-
-        # response for default page
-        elif(url == ""):
-            sendDefaultFile(connection)
-
-        # response for index.html page
-        elif(urlList[1] == "html"):
-            if(urlList[0] == "index"):
-                sendOK(connection)
-                sendDefaultFile(connection)
-            else:
-                # response for other html pages
-                sendFOF(connection)
-        else:
-            # response for bad request  
-            sendBadRequest(connection)        
+        urlResponse(url,method,connection)
         connection.close()
 
-startServer()
+    
+root = "C:\\Users\\Chandan Zna\\Documents\\MSIT 2020\\MSIT 1st year\\FCN\\Web Server"
+soc = createSocket("",80)
+startServer(soc)
