@@ -48,7 +48,7 @@ def sendFile(filename,connection):
 # sending response for request
 def urlResponse(url,method,connection):
     badRequest = False
-
+    # tcpCount = tcpCount + 1
     # response for forbidden file = "admin.csv"
     if(url == "admin.csv"):
             sendForbidden(connection)
@@ -126,10 +126,14 @@ def startServer(soc):
     respondToClients(soc)
 
 def addMutipleThreads(url,method,connection):
+    global tcpCount
+    tcpCount += 1
     urlResponse(url,method,connection)
     connection.close()
 
+    
 def respondToClients(soc):
+    global tcpCount
     while True:
         # accepting connections from clients
         connection, addr = soc.accept()
@@ -139,11 +143,13 @@ def respondToClients(soc):
         cMessage = cMessage.decode()
         # print(cMessage)
         method, url = getMethodandUrl(cMessage)
-        print(method)
+        print(method) 
         print(url)
         start_new_thread(addMutipleThreads,(url,method,connection))
+        print(tcpCount)
     soc.close()
-  
+
+tcpCount = 0
 root = "C:\\Users\\Chandan Zna\\Documents\\MSIT 2020\\MSIT 1st year\\FCN\\Web Server"
 soc = createSocket("",80)
 startServer(soc)
